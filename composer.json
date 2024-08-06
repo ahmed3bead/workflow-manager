@@ -1,0 +1,29 @@
+{
+    "name": "ahmedebead/workflow-manager",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "AhmedEbead\\WorkflowManager\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "AhmedEbead\\WorkflowManager\\Providers\\WorkflowManagerServiceProvider"
+            ]
+        }
+    },
+    "authors": [
+        {
+            "name": "Ahmed Ebead",
+            "email": "ahmed.ebead@munjz.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "php": "^8.1",
+        "laravel/framework": "^10.0"
+    }
+}
