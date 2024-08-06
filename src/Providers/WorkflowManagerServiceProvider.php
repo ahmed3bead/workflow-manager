@@ -44,7 +44,7 @@ class WorkflowManagerServiceProvider extends ServiceProvider
     public function boot()
     {
         // Register model observers
-        $models = config('workflows.models');
+        $models = config('workflows.models') ?? [];
         foreach ($models as $modelClass => $workflow) {
             if (class_exists($modelClass)) {
                 $modelClass::observe(WorkflowObserver::class);
@@ -54,7 +54,7 @@ class WorkflowManagerServiceProvider extends ServiceProvider
 
         // Publish configuration files if needed
         $this->publishes([
-            __DIR__.'/../config/workflow.php' => config_path('workflow.php'),
+            __DIR__ . '/../config/workflow-manager.php' => config_path('workflow-manager.php'),
         ]);
     }
 }
