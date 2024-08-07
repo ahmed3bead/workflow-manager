@@ -1,3 +1,5 @@
+![Workflow Manager Logo](https://raw.githubusercontent.com/ahmed3bead/workflow-manager/main/src/210139313-43f0d7ed-2005-4b71-9149-540f124c2c2f.png)
+
 # Workflow Manager Documentation
 
 *   [Introduction](#introduction)
