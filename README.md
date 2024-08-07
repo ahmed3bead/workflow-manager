@@ -21,11 +21,13 @@ With **Workflow Manager**, you can:
 *   **Define Workflows:** Easily set up workflows that model your application's processes, linking various conditions and actions.
 *   **Create and Manage Conditions:** Define custom conditions that control when actions should be executed, providing fine-grained control over your workflows.
 *   **Define and Execute Actions:** Implement actions that are triggered by specific conditions, automating repetitive tasks and ensuring smooth process execution.
+*   **Queueable Actions:** Optionally make actions queueable to enhance performance and reliability.
 *   **Visualize Workflows:** Export your workflows to flowcharts, providing a clear, visual representation of your processes.
 
 The package integrates seamlessly with Laravel's existing features, allowing you to leverage its power without adding unnecessary complexity to your application. By using **Workflow Manager**, you can enhance the maintainability, scalability, and efficiency of your application’s workflows.
 
 Get started quickly with simple commands and intuitive configuration, and explore advanced features as needed to fit your specific use cases.
+
 ## Installation
 
 To install Workflow Manager, use Composer:
@@ -38,7 +40,7 @@ composer require ahmedebead/workflow-manager
 
 Publish the configuration file with the following Artisan command:
 
-```
+```bash
 php artisan vendor:publish --tag=config
 ```
 
@@ -48,11 +50,12 @@ This will create a `config/workflow.php` file where you can define your workflow
 
 ### Create Workflow
 
-Generates a new workflow and updates the configuration file.
+Generates a new workflow and updates the configuration file and Create the necessary folders for the workflow classes in app/Workflows.
+
 
 **Usage:**
 
-```
+```bash
 php artisan workflow:create
 ```
 
@@ -70,7 +73,7 @@ Creates a new condition class for a workflow.
 
 **Usage:**
 
-```
+```bash
 php artisan workflow:condition
 ```
 
@@ -81,14 +84,31 @@ Enter the workflow name: OrderWorkflow
 Enter the condition name: IsPending
 Condition 'IsPending' created successfully.
 ```
+***Example condition:***
+```php
+<?php
+
+namespace App\Workflows\Users\Conditions;
+
+use AhmedEbead\WorkflowManager\Contracts\ConditionInterface;
+
+class UserActivatedCondition implements ConditionInterface
+{
+    public function check($model)
+    {
+        // Your Condition logic here
+        // return $model->status == 'active';
+    }
+}
+```
 
 ### Create Action
 
-Creates a new action class associated with a condition.
+Creates a new action class associated with a condition. You can choose to make the action queueable or not.
 
 **Usage:**
 
-```
+```bash
 php artisan workflow:action
 ```
 
@@ -98,14 +118,74 @@ php artisan workflow:action
 Enter the workflow name: OrderWorkflow
 Enter the condition name this action is associated with: IsPending
 Enter the action name: SendEmail
-Action 'SendEmail' created successfully.
+Should this action be queueable? (yes/no): yes
+Action 'SendEmail' created successfully with queueable support.
+```
+***Example queueable action:***
+```php
+<?php
+
+namespace App\Workflows\Order\Actions;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Throwable;
+
+class ReserveStockAction implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    protected $model;
+
+    public function __construct($model)
+    {
+        $this->model = $model;
+    }
+
+    public function handle()
+    {
+        try {
+            Log::info("Executing ReserveStockAction for model: " . get_class($this->model));
+            // Your action logic here
+        } catch (Throwable $e) {
+            Log::error('ReserveStockAction failed.', ['exception' => $e, 'model' => get_class($this->model)]);
+
+            if ($this->attempts() < config('workflow.retry.attempts')) {
+                $this->release(config('workflow.retry.delay'));
+            } else {
+                $this->fail($e);
+            }
+        }
+    }
+}
+```
+
+***Example normal action:***
+```php
+<?php
+
+namespace App\Workflows\Users\Actions;
+
+use AhmedEbead\WorkflowManager\Contracts\ActionInterface;
+
+class ReserveStockAction implements ActionInterface
+{
+    public function execute($model)
+    {
+        // Your action logic here
+    }
+}
 ```
 
 ### Export Workflow
 
 Export a workflow and its conditions/actions as a flowchart:
 
-```
+```bash
 php artisan workflow:export
 ```
 
@@ -115,13 +195,10 @@ php artisan workflow:export
 
 **Details:**
 
-1.  **Generate DOT File**
-
-The command generates a DOT file representing the workflow's conditions and actions. The DOT file is created at `app/Workflows/{workflowName}/{workflowName}.dot`.
-
-3.  **Convert DOT to PNG (Optional)**
-
-If Graphviz is installed on your system, the DOT file is converted to a PNG image for easier visualization. The PNG file is saved in the same directory as the DOT file.
+1.  **Generate DOT File**  
+    The command generates a DOT file representing the workflow's conditions and actions. The DOT file is created at `app/Workflows/{workflowName}/{workflowName}.dot`.
+2.  **Convert DOT to PNG (Optional)**  
+    If Graphviz is installed on your system, the DOT file is converted to a PNG image for easier visualization. The PNG file is saved in the same directory as the DOT file.
 
 **Important:** To convert the DOT file to a PNG image, you must have Graphviz installed. If Graphviz is not installed or the conversion fails, you'll see a warning message.
 
@@ -131,24 +208,31 @@ Follow these instructions to install Graphviz:
 
 *   **Ubuntu/Debian:**
 
-```
-sudo apt-get install graphviz
-```
+    ```
+    sudo apt-get install graphviz
+            
+    ```
 
 *   **macOS:**
 
-```
-brew install graphviz
-```
+    ```
+    brew install graphviz
+            
+    ```
 
 *   **Windows:**
 
-Download and install Graphviz from the [Graphviz website](https://graphviz.gitlab.io/download/).
+    ```
+    Download and install Graphviz from the Graphviz website.
+            
+    ```
+
 
 ## Features
 
 *   **Dynamic Workflow Management:** Create and manage workflows, conditions, and actions via Artisan commands.
 *   **Custom Conditions and Actions:** Implement custom logic for conditions and actions.
+*   **Queueable Actions:** Support for queueable actions with advanced features like batch processing, rollback on failure, and transaction management.
 *   **Automated Processing:** Automatically process models based on workflows.
 *   **Configuration Management:** Easily update and manage workflows through a configuration file.
 
