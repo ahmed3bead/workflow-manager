@@ -89,15 +89,49 @@ Enter the action name: SendEmail
 Action 'SendEmail' created successfully.
 ```
 
-### Export Workflow (Under Development)
+### Export Workflow
 
-Exports workflows, conditions, and actions as flowcharts. (Implementation details needed for this command.)
-
-**Usage:**
+Export a workflow and its conditions/actions as a flowchart:
 
 ```
 php artisan workflow:export
 ```
+
+**Prompts:**
+
+*   Enter the workflow name.
+
+**Details:**
+
+1.  **Generate DOT File**
+
+The command generates a DOT file representing the workflow's conditions and actions. The DOT file is created at `app/Workflows/{workflowName}/{workflowName}.dot`.
+
+3.  **Convert DOT to PNG (Optional)**
+
+If Graphviz is installed on your system, the DOT file is converted to a PNG image for easier visualization. The PNG file is saved in the same directory as the DOT file.
+
+**Important:** To convert the DOT file to a PNG image, you must have Graphviz installed. If Graphviz is not installed or the conversion fails, you'll see a warning message.
+
+#### Installing Graphviz
+
+Follow these instructions to install Graphviz:
+
+*   **Ubuntu/Debian:**
+
+```
+sudo apt-get install graphviz
+```
+
+*   **macOS:**
+
+```
+brew install graphviz
+```
+
+*   **Windows:**
+
+Download and install Graphviz from the [Graphviz website](https://graphviz.gitlab.io/download/).
 
 ## Features
 

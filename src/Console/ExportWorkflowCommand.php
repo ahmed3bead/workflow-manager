@@ -4,7 +4,6 @@ namespace AhmedEbead\WorkflowManager\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
-use ConvertApi\ConvertApi;
 
 class ExportWorkflowCommand extends Command
 {
@@ -15,75 +14,81 @@ class ExportWorkflowCommand extends Command
     {
         parent::__construct();
         // Initialize ConvertApi with your API key
-        ConvertApi::setApiSecret('DGsXyPZk6qs0d7Rz');
     }
 
     public function handle()
     {
         $workflowName = $this->ask('Enter the workflow name');
+        $configPath = config_path('workflow.php');
+        $config = include $configPath;
+
         $workflowPath = base_path("app/Workflows/{$workflowName}");
+
+        if (!isset($config['workflows'][$workflowName])) {
+            $this->error("Workflow '{$workflowName}' does not exist in the configuration.");
+            return;
+        }
 
         if (file_exists($workflowPath)) {
             $this->info("Exporting workflow '{$workflowName}'...");
-
+            $dotFilePath = $workflowPath . "/{$workflowName}.dot";
             // Generate DOT file content
-            $dotContent = $this->generateDotFile($workflowPath);
-            $dotFilePath = "{$workflowPath}/{$workflowName}.dot";
-            file_put_contents($dotFilePath, $dotContent);
+            // Generate DOT file
+            $this->generateDotFile($config['workflows'][$workflowName], $dotFilePath);
 
-            // Convert DOT file to PNG using ConvertAPI
-            $this->convertDotToPng($dotFilePath, $workflowName);
+            // Optionally convert DOT file to image (if Graphviz is installed)
+            $this->convertDotToImage($dotFilePath);
 
         } else {
             $this->error("Workflow '{$workflowName}' does not exist.");
         }
     }
 
-    protected function generateDotFile($workflowPath)
+    protected function generateDotFile(array $workflow, string $path)
     {
-        $dotContent = "digraph G {\n";
-        $dotContent .= "    node [shape=box];\n";
+        $dotContent = "digraph workflow {\n";
+        $dotContent .= "    rankdir=TB;\n"; // Top to Bottom layout
+        $dotContent .= "    node [shape=box, style=rounded, fontsize=12, width=2.5, height=1.0];\n"; // Adjust node size
+        $dotContent .= "    edge [fontsize=10, len=2.0];\n"; // Adjust edge length
 
-        // Add workflow
-        $dotContent .= "    \"Workflow: {$workflowPath}\" [shape=ellipse];\n";
+        // Create nodes and edges for each condition and associated actions
+        foreach ($workflow['conditions'] as $conditionClass => $actions) {
+            // Extract class name for condition
+            $conditionName = class_basename($conditionClass);
+            $dotContent .= "    \"{$conditionClass}\" [label=\"Condition: {$conditionName}\"];\n";
 
-        // Add conditions and actions
-        $conditionsPath = "{$workflowPath}/Conditions";
-        if (file_exists($conditionsPath)) {
-            foreach (File::files($conditionsPath) as $file) {
-                $conditionName = pathinfo($file, PATHINFO_FILENAME);
-                $dotContent .= "    \"{$conditionName}\" [label=\"Condition: {$conditionName}\"];\n";
-                $dotContent .= "    \"Workflow: {$workflowPath}\" -> \"{$conditionName}\";\n";
-            }
-        }
-
-        $actionsPath = "{$workflowPath}/Actions";
-        if (file_exists($actionsPath)) {
-            foreach (File::files($actionsPath) as $file) {
-                $actionName = pathinfo($file, PATHINFO_FILENAME);
-                $dotContent .= "    \"{$actionName}\" [label=\"Action: {$actionName}\"];\n";
-                $dotContent .= "    \"Workflow: {$workflowPath}\" -> \"{$actionName}\";\n";
+            foreach ($actions as $actionClass) {
+                // Extract class name for action
+                $actionName = class_basename($actionClass);
+                $dotContent .= "    \"{$conditionClass}\" -> \"{$actionClass}\" [label=\"Action: {$actionName}\"];\n";
+                // Add node for the action if not already added
+                $dotContent .= "    \"{$actionClass}\" [label=\"Action: {$actionName}\"];\n";
             }
         }
 
         $dotContent .= "}\n";
 
-        return $dotContent;
+        file_put_contents($path, $dotContent);
     }
 
-    protected function convertDotToPng($dotFilePath, $workflowName)
+    protected function convertDotToImagew(string $dotFilePath)
     {
-        try {
-            $result = ConvertApi::convert('pdf', [
-                'File' => $dotFilePath
-            ], 'dot');
+        $pngFilePath = str_replace('.dot', '.png', $dotFilePath);
 
-            $result->saveFiles($dotFilePath.'.pdf');
-
-            $this->info("Workflow '{$workflowName}' exported successfully as '{$workflowName}.png'.");
-
-        } catch (\Exception $e) {
-            $this->error("Failed to convert DOT file to PNG: " . $e->getMessage());
+        // Convert DOT to PNG using Graphviz (if installed)
+        if (shell_exec("dot -Tpng {$dotFilePath} -o {$pngFilePath}")) {
+            $this->info("Converted DOT file to PNG image.");
+        } else {
+            $this->warn("Graphviz is not installed or failed to convert DOT to PNG.");
         }
+    }
+
+    protected function convertDotToImage(string $dotFilePath)
+    {
+        $pngFilePath = str_replace('.dot', '.png', $dotFilePath);
+
+        // Convert DOT to PNG using Graphviz (if installed)
+        $command = "dot -Tpng {$dotFilePath} -o {$pngFilePath}";
+        $output = shell_exec($command);
     }
 }
