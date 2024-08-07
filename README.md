@@ -1,132 +1,130 @@
-# AhmedEbead\\WorkflowManager Documentation
+# Workflow Manager Documentation
 
-## Overview
-
-`AhmedEbead\WorkflowManager` is a Laravel package for managing workflows. It supports creating, managing, and executing workflows with conditions and actions. The package allows dynamic interaction through user-defined classes and integrates seamlessly with Laravel's model lifecycle.
-
-## Table of Contents
-
+*   [Introduction](#introduction)
 *   [Installation](#installation)
 *   [Configuration](#configuration)
-*   [Creating Workflows](#creating-workflows)
-*   [Managing Conditions](#managing-conditions)
-*   [Defining Actions](#defining-actions)
-*   [Usage](#usage)
 *   [Commands](#commands)
-*   [Exporting Workflows](#exporting-workflows)
-*   [Observing Models](#observing-models)
+*   [Features](#features)
+*   [Contributing](#contributing)
+*   [Changelog](#changelog)
+*   [License](#license)
+*   [Contact](#contact)
+
+## Introduction
+
+Workflow Manager facilitates the creation and management of workflows in Laravel applications. It integrates with your Eloquent models and provides a flexible system for defining conditions and actions.
 
 ## Installation
 
-1.  **Add the Package**: Add the package to your Laravel application via Composer.
+To install Workflow Manager, use Composer:
 
-    ```
-    composer require ahmedebead/workflow-manager
-    ```
-
-2.  **Publish the Configuration**: Publish the package configuration file.
-
-    ```
-    php artisan vendor:publish --provider="AhmedEbead\WorkflowManager\Providers\WorkflowManagerServiceProvider"
-    ```
-
+```
+composer require ahmedebead/workflow-manager
+```
 
 ## Configuration
 
-1.  **Add Models to Configuration**: Configure which models use workflows in `config/workflows.php`.
-
-    ```
-    return [
-        'models' => [
-            \App\Models\Order::class => 'order_workflow',
-            \App\Models\User::class => 'user_workflow',
-            \App\Models\Product::class => 'product_workflow',
-        ],
-    ];
-    ```
-
-
-## Creating Workflows
-
-To create a new workflow, use the `workflow:create` command. This command will prompt you for details about the workflow, including its name.
+Publish the configuration file with the following Artisan command:
 
 ```
-php artisan workflow:create
+php artisan vendor:publish --tag=config
 ```
 
-This command will create a new directory within the `app/Workflows` directory. For example, if you create a workflow named "OrderWorkflow", it will be placed in `app/Workflows/OrderWorkflow`.
-
-Ensure that the workflow name you provide matches the name specified in the configuration file `config/workflows.php`. For instance, if you configure `\App\Models\Order::class => 'order_workflow'`, the workflow directory should be named `order_workflow`.
-
-## Managing Conditions
-
-1.  **Create a Condition**: Use the `workflow:condition` command to create a new condition.
-
-    ```
-    php artisan workflow:condition
-    ```
-
-    You will be prompted to enter the condition name and the class name. Conditions will be created in the `app/Workflows/{workflow_name}/Conditions` directory.
-
-2.  **Define the Condition Class**: Add your condition logic in the newly created class within the `app/Workflows/{workflow_name}/Conditions` directory.
-
-## Defining Actions
-
-1.  **Create an Action**: Use the `workflow:action` command to create a new action.
-
-    ```
-    php artisan workflow:action
-    ```
-
-    You will be prompted to enter the action name and the class name. Actions will be created in the `app/Workflows/{workflow_name}/Actions` directory.
-
-2.  **Define the Action Class**: Add your action logic in the newly created class within the `app/Workflows/{workflow_name}/Actions` directory.
-
-## Usage
-
-1.  **Create and Configure Models**: Create your models and ensure they are listed in the `config/workflows.php` file.
-2.  **Define Workflows**: Define workflows by creating workflow files and classes in the `app/Workflows` directory.
-3.  **Attach Workflows to Models**: Ensure models use workflows as configured in the `config/workflows.php`.
-4.  **Handle Conditions and Actions**: Define conditions and actions as user-defined classes and place them in the appropriate directories under `app/Workflows/{workflow_name}`.
+This will create a `config/workflow.php` file where you can define your workflows, conditions, and actions.
 
 ## Commands
 
-**Create Workflow**
+### Create Workflow
+
+Generates a new workflow and updates the configuration file.
+
+**Usage:**
 
 ```
 php artisan workflow:create
 ```
 
-Prompts for the workflow name. Creates a new directory in `app/Workflows` with the specified workflow name. Ensure this name matches the entry in `config/workflows.php`.
+**Example:**
 
-**Create Condition**
+```
+Enter the workflow name: OrderWorkflow
+Enter the model class for this workflow (e.g., \App\Models\User): \App\Models\Order
+Workflow 'OrderWorkflow' created successfully.
+```
+
+### Create Condition
+
+Creates a new condition class for a workflow.
+
+**Usage:**
 
 ```
 php artisan workflow:condition
 ```
 
-Prompts for the condition name and class. Creates a new condition class in `app/Workflows/{workflow_name}/Conditions`.
+**Example:**
 
-**Create Action**
+```
+Enter the workflow name: OrderWorkflow
+Enter the condition name: IsPending
+Condition 'IsPending' created successfully.
+```
+
+### Create Action
+
+Creates a new action class associated with a condition.
+
+**Usage:**
 
 ```
 php artisan workflow:action
 ```
 
-Prompts for the action name and class. Creates a new action class in `app/Workflows/{workflow_name}/Actions`.
+**Example:**
 
-**Export Workflow**
+```
+Enter the workflow name: OrderWorkflow
+Enter the condition name this action is associated with: IsPending
+Enter the action name: SendEmail
+Action 'SendEmail' created successfully.
+```
+
+### Export Workflow
+
+Exports workflows, conditions, and actions as flowcharts. (Implementation details needed for this command.)
+
+**Usage:**
 
 ```
 php artisan workflow:export
 ```
 
-Exports workflows and their related conditions and actions as a flowchart. This feature requires Graphviz to be installed on your system.
+## Features
 
-## Exporting Workflows
+*   **Dynamic Workflow Management:** Create and manage workflows, conditions, and actions via Artisan commands.
+*   **Custom Conditions and Actions:** Implement custom logic for conditions and actions.
+*   **Automated Processing:** Automatically process models based on workflows.
+*   **Configuration Management:** Easily update and manage workflows through a configuration file.
 
-The `workflow:export` command will export the workflow, conditions, and actions as a flowchart. Ensure Graphviz is installed to enable this functionality.
+## Contributing
 
-## Observing Models
+We welcome contributions to Workflow Manager! To contribute:
 
-To observe models and trigger workflows, ensure the models are listed in the `config/workflows.php` file. The `WorkflowObserver` will process the workflow when models are saved or updated.
+1.  Fork the repository.
+2.  Create a new branch for your changes.
+3.  Commit your changes and push to your fork.
+4.  Open a pull request describing your changes.
+
+For detailed contribution guidelines, see the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+
+## Changelog
+
+For a list of changes and updates, refer to the [CHANGELOG.md](CHANGELOG.md) file.
+
+## License
+
+Workflow Manager is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
+
+## Contact
+
+For questions or support, please contact [ahmed3bead](https://github.com/ahmed3bead) or open an issue on GitHub.
