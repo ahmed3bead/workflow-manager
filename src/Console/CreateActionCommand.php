@@ -34,7 +34,7 @@ class CreateActionCommand extends Command
     protected function beautifyConfigFile()
     {
         $configPath = config_path('workflow.php');
-        exec("vendor/bin/phpcbf $configPath");
+        //exec("vendor/bin/phpcbf $configPath");
     }
     protected function createActionClass($path, $className, $workflowName)
     {

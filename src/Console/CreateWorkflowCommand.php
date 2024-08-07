@@ -35,7 +35,7 @@ class CreateWorkflowCommand extends Command
     protected function beautifyConfigFile()
     {
         $configPath = config_path('workflow.php');
-        exec("vendor/bin/phpcbf $configPath");
+        //exec("vendor/bin/phpcbf $configPath");
     }
     protected function updateConfigFile($modelClass, $workflowName)
     {
