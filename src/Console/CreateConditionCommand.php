@@ -70,6 +70,7 @@ PHP;
         $config['workflows'][$workflowName]['conditions'][$conditionClass] = [];
 
         $configContent = "<?php\n\nreturn " . var_export($config, true) . ";\n";
+        $configContent = str_replace(['\\\\'], ['\\'], $configContent);
         file_put_contents($configPath, $configContent);
     }
 }
