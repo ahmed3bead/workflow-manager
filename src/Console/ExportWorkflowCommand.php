@@ -4,6 +4,7 @@ namespace AhmedEbead\WorkflowManager\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use ConvertApi\ConvertApi;
 
 class ExportWorkflowCommand extends Command
 {
@@ -13,6 +14,8 @@ class ExportWorkflowCommand extends Command
     public function __construct()
     {
         parent::__construct();
+        // Initialize ConvertApi with your API key
+        ConvertApi::setApiSecret('DGsXyPZk6qs0d7Rz');
     }
 
     public function handle()
@@ -20,19 +23,17 @@ class ExportWorkflowCommand extends Command
         $workflowName = $this->ask('Enter the workflow name');
         $workflowPath = base_path("app/Workflows/{$workflowName}");
 
-        if (File::exists($workflowPath)) {
+        if (file_exists($workflowPath)) {
             $this->info("Exporting workflow '{$workflowName}'...");
 
             // Generate DOT file content
             $dotContent = $this->generateDotFile($workflowPath);
             $dotFilePath = "{$workflowPath}/{$workflowName}.dot";
-            File::put($dotFilePath, $dotContent);
+            file_put_contents($dotFilePath, $dotContent);
 
-            // Generate image from DOT file
-            $imageFilePath = "{$workflowPath}/{$workflowName}.png";
-            $this->generateFlowchartImage($dotFilePath, $imageFilePath);
+            // Convert DOT file to PNG using ConvertAPI
+            $this->convertDotToPng($dotFilePath, $workflowName);
 
-            $this->info("Workflow '{$workflowName}' exported successfully as '{$workflowName}.png'.");
         } else {
             $this->error("Workflow '{$workflowName}' does not exist.");
         }
@@ -48,7 +49,7 @@ class ExportWorkflowCommand extends Command
 
         // Add conditions and actions
         $conditionsPath = "{$workflowPath}/Conditions";
-        if (File::exists($conditionsPath)) {
+        if (file_exists($conditionsPath)) {
             foreach (File::files($conditionsPath) as $file) {
                 $conditionName = pathinfo($file, PATHINFO_FILENAME);
                 $dotContent .= "    \"{$conditionName}\" [label=\"Condition: {$conditionName}\"];\n";
@@ -57,7 +58,7 @@ class ExportWorkflowCommand extends Command
         }
 
         $actionsPath = "{$workflowPath}/Actions";
-        if (File::exists($actionsPath)) {
+        if (file_exists($actionsPath)) {
             foreach (File::files($actionsPath) as $file) {
                 $actionName = pathinfo($file, PATHINFO_FILENAME);
                 $dotContent .= "    \"{$actionName}\" [label=\"Action: {$actionName}\"];\n";
@@ -70,13 +71,19 @@ class ExportWorkflowCommand extends Command
         return $dotContent;
     }
 
-    protected function generateFlowchartImage($dotFilePath, $imageFilePath)
+    protected function convertDotToPng($dotFilePath, $workflowName)
     {
-        $command = "dot -Tpng {$dotFilePath} -o {$imageFilePath}";
-        exec($command, $output, $returnVar);
+        try {
+            $result = ConvertApi::convert('pdf', [
+                'File' => $dotFilePath
+            ], 'dot');
 
-        if ($returnVar !== 0) {
-            $this->error("Failed to generate image from DOT file.");
+            $result->saveFiles($dotFilePath.'.pdf');
+
+            $this->info("Workflow '{$workflowName}' exported successfully as '{$workflowName}.png'.");
+
+        } catch (\Exception $e) {
+            $this->error("Failed to convert DOT file to PNG: " . $e->getMessage());
         }
     }
 }

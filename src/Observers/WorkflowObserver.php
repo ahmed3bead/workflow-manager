@@ -14,7 +14,7 @@ class WorkflowObserver
         $this->workflowService = $workflowService;
     }
 
-    public function saved(Model $model)
+    public function saved(Model $model): void
     {
         $this->workflowService->processModel($model);
     }

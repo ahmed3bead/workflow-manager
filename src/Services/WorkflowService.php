@@ -2,70 +2,36 @@
 
 namespace AhmedEbead\WorkflowManager\Services;
 
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
 
 class WorkflowService
 {
-    /**
-     * Process the given model by executing the associated workflow.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $model
-     * @return void
-     */
-    public function processModel($model)
+    public function processModel(Model $model)
     {
         $modelClass = get_class($model);
-        $workflowId = $this->getWorkflowIdForModel($modelClass);
+        $workflowName = $this->getWorkflowNameForModel($modelClass);
 
-        if (!$workflowId) {
-            Log::info('No workflow found for model: ' . $modelClass);
-            return;
+        if ($workflowName) {
+            $this->processWorkflow($workflowName, $model);
         }
-
-        $this->processWorkflow($workflowId, $model);
     }
 
-    /**
-     * Get the workflow ID associated with the model class.
-     *
-     * @param string $modelClass
-     * @return string|null
-     */
-    protected function getWorkflowIdForModel($modelClass)
+    protected function getWorkflowNameForModel($modelClass)
     {
-        $workflowMapping = config('workflows.models');
-        return $workflowMapping[$modelClass] ?? null;
+        $config = Config::get('workflow.models', []);
+        return $config[$modelClass] ?? null;
     }
 
-    /**
-     * Process the workflow by executing conditions and actions.
-     *
-     * @param string $workflowId
-     * @param \Illuminate\Database\Eloquent\Model $model
-     * @return void
-     */
-    protected function processWorkflow($workflowId, $model)
+    protected function processWorkflow($workflowName, $model)
     {
-        $workflowPath = base_path('app/workflows/' . $workflowId);
+        $workflows = Config::get("workflow.workflows.{$workflowName}.conditions", []);
 
-        if (!File::exists($workflowPath)) {
-            Log::info('Workflow not found: ' . $workflowId);
-            return;
-        }
-
-        $conditionsPath = $workflowPath . '/conditions';
-        $actionsPath = $workflowPath . '/actions';
-
-        $conditions = File::files($conditionsPath);
-        foreach ($conditions as $conditionFile) {
-            $conditionClass = 'App\\Conditions\\' . pathinfo($conditionFile, PATHINFO_FILENAME);
+        foreach ($workflows as $conditionClass => $actions) {
             $condition = new $conditionClass();
-
             if ($condition->check($model)) {
-                $actions = File::files($actionsPath);
-                foreach ($actions as $actionFile) {
-                    $actionClass = 'App\\Actions\\' . pathinfo($actionFile, PATHINFO_FILENAME);
+                foreach ($actions as $actionClass) {
+
                     $action = new $actionClass();
                     $action->execute($model);
                 }
